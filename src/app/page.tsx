@@ -43,6 +43,7 @@ export default function Home() {
             <ul>
               {data && data.map((item, index) => (
                   <li key={index}>
+                      <p>{index+1}</p>
                       <Link href={`${item.url}`}>
                               <h2>{item.name}</h2>
                       </Link>
