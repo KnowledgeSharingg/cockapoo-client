@@ -1,69 +1,83 @@
-'use client'
+'use client';
 
-import Image from 'next/image'
-import {useEffect, useState} from "react";
-import axios from "axios";
-import Link from "next/link";
+import { useState, useMemo } from 'react';
+import { CategoryFilter } from '../types';
+import { blogs } from '../data/blogs';
+import Header from '../components/Header';
+import TabFilter from '../components/TabFilter';
+import BlogGrid from '../components/BlogGrid';
+import Footer from '../components/Footer';
 
-const API_URL = 'http://localhost:8080';
 export default function Home() {
-    type BlogInfo = {
-        id: number;
-        name: string;
-        url: string;
-        views?: number;
-    };
-  const [data, setData] = useState<BlogInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState<CategoryFilter>('all');
 
-  useEffect(() => {
-    // Axios를 사용하여 서버에 GET 요청을 보냅니다.
-    axios.get(API_URL + "/blogs")
-        .then((response) => {
-          setData(response.data.data);
-          console.log('>>data : ' + JSON.stringify(data));
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error('서버 요청 오류:', error);
-          setLoading(false);
-        });
+  // Calculate counts for each category
+  const counts = useMemo(() => {
+    const domestic = blogs.filter(blog => blog.category === 'domestic').length;
+    const global = blogs.filter(blog => blog.category === 'global').length;
+    
+    return {
+      all: blogs.length,
+      domestic,
+      global,
+    };
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Tech Blogs
-        </p>
-        <div>
-        {loading ? (
-            <p>데이터를 불러오는 중...</p>
-        ) : (
-            <ul>
-              {data && data.map((item, index) => (
-                  <li key={index}>
-                      <p>{index+1}</p>
-                      <Link href={`${item.url}`}>
-                              <h2>{item.name}</h2>
-                      </Link>
-                      <p>{item.views}</p>
-                  </li>
-              ))}
-            </ul>
-        )}
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <Header 
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
+
+      {/* Tab Filter */}
+      <TabFilter
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        counts={counts}
+      />
+
+      {/* Main Content */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Info */}
+        <div className="mb-8">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{counts.all}</div>
+                <div className="text-sm text-gray-600">전체 블로그</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{counts.domestic}</div>
+                <div className="text-sm text-gray-600">국내 기업</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">{counts.global}</div>
+                <div className="text-sm text-gray-600">해외 기업</div>
+              </div>
+            </div>
+            {searchTerm && (
+              <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">&quot;{searchTerm}&quot;</span> 검색 결과
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By seongkyu-lim
-          </a>
-        </div>
-      </div>
-    </main>
-  )
+
+        {/* Blog Grid */}
+        <BlogGrid
+          blogs={blogs}
+          searchTerm={searchTerm}
+          activeFilter={activeFilter}
+        />
+      </main>
+
+      {/* Footer */}
+      <Footer />
+    </div>
+  );
 }
